@@ -1,0 +1,10 @@
+RowBound类型?
+
+
+
+
+
+自动将以下划线方式命名的数据库列映射到Java对象的驼峰式命名属性中。默认false.
+<settings>
+    <setting name="mapUnderscoreToCameCase" value="true/>
+</settings>

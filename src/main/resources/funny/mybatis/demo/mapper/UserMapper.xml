@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="funny.mybatis.demo.mapper.UserMapper">
+    <cache/>
+    <cache-ref namespace="funny.mybatis.demo.mapper.RoleMapper"/>
+    <resultMap id="userMap" type="SysUser">
+        <id property="id" column="id"/>
+        <result property="userName" column="user_name"/>
+        <result property="userPassword" column="user_password"/>
+        <result property="userEmail" column="user_email"/>
+        <result property="userInfo" column="user_info"/>
+        <result property="headImg" column="head_img" jdbcType="BLOB"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+
+
+    <resultMap id="userRoleMap" extends="userMap" type="SysUser">
+        <association property="role" columnPrefix="role_" resultMap="funny.mybatis.demo.mapper.RoleMapper.roleMap">
+        </association>
+    </resultMap>
+
+    <resultMap id="userRoleMapSelect" extends="userMap" type="SysUser">
+        <association property="role" column="{id=role_id}" fetchType="lazy"
+                     select="funny.mybatis.demo.mapper.RoleMapper.selectRoleById"/>
+    </resultMap>
+
+    <resultMap id="userRoleListMap" extends="userMap" type="SysUser">
+        <collection property="roleList" columnPrefix="role_" resultMap="funny.mybatis.demo.mapper.RoleMapper.rolePrivilegeListMap"/>
+    </resultMap>
+    <resultMap id="userRoleListMapSelect" type="SysUser" extends="userMap">
+        <collection property="roleList" fetchType="lazy"
+                    select="funny.mybatis.demo.mapper.RoleMapper.selectRoleByUserId"
+                    column="{userId=id}"/>
+    </resultMap>
+    <select id="selectById" flushCache="true"  resultMap="userMap">
+        SELECT * FROM sys_user WHERE id = #{id}
+    </select>
+    <select id="selectAll" resultType="SysUser">
+        SELECT
+            id
+            ,user_name AS userName
+            ,user_password AS userPassword
+            ,user_email AS userEmail
+            ,user_info AS useInfo
+            ,head_img AS headImg
+            ,create_time AS createTime
+        FROM sys_user
+
+    </select>
+
+    <select id="selectRoleByUserId" resultType="SysRole">
+        SELECT
+            R.id
+            ,R.role_name AS roleName
+            ,R.enabled
+            ,R.create_by AS createBy
+            ,R.create_time AS createTime
+        FROM sys_user U
+        INNER JOIN sys_user_role UR
+        ON U.id = UR.user_id
+        INNER JOIN sys_role R
+        ON UR.role_id = R.id
+        WHERE U.id =#{userId}
+
+    </select>
+    <insert id="insert">
+        INSERT INTO sys_user
+        (
+            id
+            ,user_name
+            ,user_password
+            ,user_email
+            ,user_info
+            ,head_img
+            ,create_time
+        )
+        VALUES
+        (
+            #{id}
+            ,#{userName}
+            ,#{userPassword}
+            ,#{userEmail}
+            ,#{userInfo}
+            ,#{headImg ,jdbcType=BLOB}
+            ,#{createTime ,jdbcType=TIMESTAMP}
+
+        )
+    </insert>
+
+    <insert id="insertGetKey" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user
+        (
+        id
+        ,user_name
+        ,user_password
+        ,user_email
+        ,user_info
+        ,head_img
+        ,create_time
+        )
+        VALUES
+        (
+        #{id}
+        ,#{userName}
+        ,#{userPassword}
+        ,#{userEmail}
+        ,#{userInfo}
+        ,#{headImg ,jdbcType=BLOB}
+        ,#{createTime ,jdbcType=TIMESTAMP}
+
+        )
+    </insert>
+
+    <insert id="insertSelectKey">
+        INSERT INTO sys_user
+        (
+        id
+        ,user_name
+        ,user_password
+        ,user_email
+        ,user_info
+        ,head_img
+        ,create_time
+        )
+        VALUES
+        (
+        #{id}
+        ,#{userName}
+        ,#{userPassword}
+        ,#{userEmail}
+        ,#{userInfo}
+        ,#{headImg ,jdbcType=BLOB}
+        ,#{createTime ,jdbcType=TIMESTAMP}
+        )
+        <selectKey keyColumn="id" resultType="long" keyProperty="id" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+    <update id="updateById">
+        UPDATE sys_user SET
+            user_name = #{userName}
+            ,user_password = #{userPassword}
+            ,user_email = #{userEmail}
+            ,user_info = #{userInfo}
+            ,head_img = #{headImg ,jdbcType=BLOB}
+            ,create_time = #{createTime ,jdbcType=TIMESTAMP}
+        WHERE id = #{id}
+
+    </update>
+    <delete id="deleteById">
+        DELETE FROM sys_user
+        WHERE id = #{id}
+    </delete>
+
+    <select id="selectRolesByUserIdAndRoleEnable" resultType="SysRole">
+        SELECT
+        R.id
+        ,R.role_name AS roleName
+        ,R.enabled
+        ,R.create_by AS createBy
+        ,R.create_time AS createTime
+        FROM sys_user U
+        INNER JOIN sys_user_role UR
+        ON U.id = UR.user_id
+        INNER JOIN sys_role R
+        ON UR.role_id = R.id
+        WHERE U.id =#{userId}
+        AND R.enabled = #{enabled}
+    </select>
+
+    <select id="selectByUser" resultType="SysUser">
+        SELECT
+            id
+            ,user_name AS userName
+            ,user_password AS userPassword
+            ,user_email AS userEmail
+            ,user_info AS useInfo
+            ,head_img AS headImg
+            ,create_time AS createTime
+        FROM sys_user
+        <where>
+        <if test="userName!=null and userName!=''">
+         AND user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <if test="userEmail!=null and userEmail!=''">
+         AND user_email = #{userEmail}
+        </if>
+        </where>
+    </select>
+    <update id="updateByIdSelective">
+        UPDATE sys_user
+        <set>
+            <if test="userName!=null and userName!=''">
+                user_name =#{userName},
+            </if>
+            <if test="userPassword!=null and userPassword!=''">
+                user_password =#{userPassword},
+            </if>
+            <if test="userEmail!=null and userEmail!=''">
+                user_email =#{userEmail},
+            </if>
+            <if test="userInfo!=null and userInfo!=''">
+                user_info =#{userInfo},
+            </if>
+            <if test="headImg!=null">
+                head_img =#{headImg ,jdbcType=BLOB},
+            </if>
+            <if test="createTime!=null">
+                create_time =#{createTime ,jdbcType=TIMESTAMP},
+            </if>
+            id=#{id}
+        </set>
+        WHERE id = #{id}
+    </update>
+    <insert id="insert2" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user
+        (
+        id
+        ,user_name
+        ,user_password
+        <if test="userEmail!=null and userEmail!=''">
+            ,user_email
+        </if>
+        ,user_info
+        ,head_img
+        ,create_time
+        )
+        VALUES
+        (
+        #{id}
+        ,#{userName}
+        ,#{userPassword}
+        <if test="userEmail!=null and userEmail!=''">
+        ,#{userEmail}
+        </if>
+        ,#{userInfo}
+        ,#{headImg ,jdbcType=BLOB}
+        ,#{createTime ,jdbcType=TIMESTAMP}
+        )
+    </insert>
+    <select id="selectByIdOrUserName" resultType="SysUser">
+        SELECT
+            id
+            ,user_name AS userName
+            ,user_password AS userPassword
+            ,user_email AS userEmail
+            ,user_info AS useInfo
+            ,head_img AS headImg
+            ,create_time AS createTime
+        FROM sys_user
+        WHERE 1 = 1
+        <choose>
+            <when test="id!=null">
+                 AND id = #{id}
+            </when>
+            <when test="userName!=null and userName!=''">
+                AND user_name = #{userName}
+            </when>
+            <otherwise>
+                AND 1 = 2
+            </otherwise>
+        </choose>
+    </select>
+    <select id="selectByIdList" resultType="SysUser">
+        SELECT
+        id
+        ,user_name AS userName
+        ,user_password AS userPassword
+        ,user_email AS userEmail
+        ,user_info AS useInfo
+        ,head_img AS headImg
+        ,create_time AS createTime
+        FROM sys_user
+        WHERE id IN
+        <foreach collection="idList" open="(" close=")" separator="," item="id" index="i">
+            #{id}
+        </foreach>
+    </select>
+
+    <insert id="insertList" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user
+        (
+        user_name
+        ,user_password
+        ,user_email
+        ,user_info
+        ,head_img
+        ,create_time
+        )
+        VALUES
+        <foreach collection="list" item="user" separator=",">
+        (
+        #{user.userName}
+        ,#{user.userPassword}
+        ,#{user.userEmail}
+        ,#{user.userInfo}
+        ,#{user.headImg ,jdbcType=BLOB}
+        ,#{user.createTime ,jdbcType=TIMESTAMP}
+        )
+        </foreach>
+    </insert>
+    <update id="updateByMap">
+        UPDATE sys_user SET
+        <foreach collection="_parameter" item="val" index="key" separator=",">
+            ${key} = #{val}
+        </foreach>
+        WHERE id = #{id}
+    </update>
+    <select id="selectUserAndRoleById" resultType="SysUser">
+        SELECT
+            u.id AS id
+            ,u.user_name AS userName
+            ,u.user_password AS userPassword
+            ,u.user_email AS userEmail
+            ,u.user_info AS userInfo
+            ,u.head_img AS headImg
+            ,u.create_time AS createTime
+            ,r.role_name AS "role.roleName"
+            ,r.enabled AS "role.enabled"
+            ,r.create_by AS "role.createBy"
+            ,r.create_time AS "role.createTime"
+        FROM sys_user u
+        INNER JOIN sys_user_role ur
+        ON u.id = ur.user_id
+        INNER JOIN sys_role r
+        ON r.id = ur.role_id
+        WHERE u.id = #{id}
+    </select>
+
+    <select id="selectUserAndRoleById2" resultMap="userRoleMap">
+        SELECT
+        u.id AS id
+        ,u.user_name
+        ,u.user_password
+        ,u.user_email
+        ,u.user_info
+        ,u.head_img
+        ,u.create_time
+        ,r.id AS role_id
+        ,r.role_name AS role_role_name
+        ,r.enabled AS role_enabled
+        ,r.create_by AS role_create_by
+        ,r.create_time AS role_create_time
+        FROM sys_user u
+        INNER JOIN sys_user_role ur
+        ON u.id = ur.user_id
+        INNER JOIN sys_role r
+        ON r.id = ur.role_id
+        WHERE u.id = #{id}
+    </select>
+
+
+    <select id="selectUserAndRoleByIdSelect" resultMap="userRoleMapSelect">
+        SELECT
+        u.id
+        ,u.user_name
+        ,u.user_password
+        ,u.user_email
+        ,u.user_info
+        ,u.head_img
+        ,u.create_time
+        ,ur.role_id
+        FROM sys_user u
+        INNER JOIN sys_user_role ur
+        ON u.id = ur.user_id
+        WHERE u.id = #{id}
+
+    </select>
+    <select id="selectAllUserAndRoles" resultMap="userRoleListMap">
+        SELECT
+        u.id
+        ,u.user_name
+        ,u.user_password
+        ,u.user_email
+        ,u.user_info
+        ,u.head_img
+        ,u.create_time
+        ,r.id AS role_role_id
+        ,r.role_name AS role_role_name
+        ,r.enabled AS role_enabled
+        ,r.create_by AS role_create_by
+        ,r.create_time AS role_create_time
+        ,p.id AS role_privilege_id
+        ,p.privilege_name AS role_privilege_privilege_name
+        ,p.privilege_url AS role_privilege_privilege_url
+        FROM sys_user u
+        INNER JOIN sys_user_role ur
+        ON u.id = ur.user_id
+        INNER JOIN sys_role r
+        ON r.id = ur.role_id
+        INNER JOIN sys_role_privilege rp
+        ON rp.role_id = r.id
+        INNER JOIN sys_privilege p
+        ON p.id = rp.privilege_id
+    </select>
+    <select id="selectAllUserAndRolesSelect" resultMap="userRoleListMapSelect">
+        SELECT
+            u.id
+            ,u.user_name
+            ,u.user_password
+            ,u.user_email
+            ,u.user_info
+            ,u.head_img
+            ,u.create_time
+        FROM sys_user u
+        WHERE u.id  =#{id}
+    </select>
+
+    <select id="selectUserById" statementType="CALLABLE" useCache="false">
+        {call select_user_by_id(
+            #{id,mode=IN},
+            #{userName,mode=OUT,jdbcType=VARCHAR},
+            #{userPassword,mode=OUT,jdbcType=VARCHAR},
+            #{userEmail,mode=OUT,jdbcType=VARCHAR},
+            #{userInfo,mode=OUT,jdbcType=VARCHAR},
+            #{headImg,mode=OUT,jdbcType=BLOB,javaType=_byte[]},
+            #{createTime,mode=OUT,jdbcType=TIMESTAMP}
+
+        )
+        }
+    </select>
+
+    <select id="selectUserPage" statementType="CALLABLE" useCache="false" resultMap="userMap">
+        {call select_user_page(
+        #{userName,mode=IN},
+        #{offset,mode=IN},
+        #{limit,mode=IN},
+        #{total,mode=OUT,jdbcType=BIGINT}
+
+        )
+        }
+    </select>
+
+    <select id="insertUserAndRoles" statementType="CALLABLE">
+        {call insert_user_and_roles(
+        #{user.id,mode=OUT,jdbcType=BIGINT},
+        #{user.userName,mode=IN},
+        #{user.userPassword,mode=IN},
+        #{user.userEmail,mode=IN},
+        #{user.userInfo,mode=IN},
+        #{user.headImg,mode=IN},
+        #{user.createTime,mode=OUT,jdbcType=TIMESTAMP},
+        #{roleIds,mode=IN}
+        )
+        }
+    </select>
+    <delete id="deleteUserById" statementType="CALLABLE">
+        {call delete_user_by_id(#{id,mode=IN})}
+    </delete>
+</mapper>
