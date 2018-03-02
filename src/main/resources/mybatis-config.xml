@@ -67,6 +67,8 @@
         <mapper resource="funny/mybatis/demo/mapper/RolePrivilegeMapper.xml"/>
         <mapper resource="funny/mybatis/demo/mapper/UserMapper.xml"/>
         <mapper resource="funny/mybatis/demo/mapper/UserRoleMapper.xml"/>
+        <mapper resource="funny/mybatis/demo/mapper/SimpleMapper.xml"/>
+
         <!--<package name="funny.mybatis.demo.mapper"/>-->
     </mappers>
 </configuration>
